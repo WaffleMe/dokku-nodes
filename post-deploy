@@ -1,7 +1,11 @@
 #!/bin/bash
 set -e
-APP="$1"; PORT="$2";
-update_nodes () {
+
+APP="$1"
+PORT="$2"
+APP_ROOT="/home/git"
+
+update_nodes() {
   vars=`echo -e "$1"`
 
   for word in $vars; do
@@ -15,10 +19,10 @@ update_nodes () {
   done
 }
 
-if [[ -f "/home/git/$APP/config" ]]; then 
+if [[ -f "$APP_ROOT/$APP/config" ]]; then
   REMOTE_APP="localhost:5000/appl/$APP"
   echo "$REMOTE_APP $APP"
   docker tag app/$APP $REMOTE_APP
   docker push $REMOTE_APP
-  update_nodes `cat /home/git/$APP/NODES`
+  update_nodes `cat $APP_ROOT/$APP/NODES`
 fi

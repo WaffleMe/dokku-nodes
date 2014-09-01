@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e;
 
+APP_ROOT="/home/git"
+
 # Check if name is specified
 if [[ $1 == nodes ]] || [[ $1 == nodes:* ]]; then
   echo $HOME
@@ -9,11 +11,11 @@ if [[ $1 == nodes ]] || [[ $1 == nodes:* ]]; then
     exit 1
   else
     APP="$2"
-    ENV_FILE="/home/git/$APP/NODES"
+    ENV_FILE="$APP_ROOT/$APP/NODES"
     echo $ENV_FILE
     # Check if app exists with the same name
     if [[ $1 != "nodes:internal:deploy" ]]; then
-      if [ ! -d "/home/git/$APP" ]; then
+      if [ ! -d "$APP_ROOT/$APP" ]; then
         echo "$APP does not exist"
         exit 1
       fi
@@ -102,7 +104,7 @@ case "$1" in
       echo "Must specify KEY and VALUE to set."
       exit 1
     fi
-    APP="$2"; APP_DIR="/home/git/$APP"
+    APP="$2"; APP_DIR="$APP_ROOT/$APP"
     ENV_ADD=""
     ENV_TEMP=`cat "${ENV_FILE}"`
     # disabling requirement for app to be running to set nodes
@@ -126,7 +128,7 @@ case "$1" in
       KEY=`echo ${var} | cut -d"=" -f1`
       VALUE=`echo ${var} | cut -d"=" -f2-`
       if [[ $KEY == [a-zA-Z_][a-zA-Z0-9_]* ]] && [ ${#VALUE} -gt 0 ]; then
-        echo "su - git -c \"cat /home/git/.ssh/id_rsa.pub | ssh root@$VALUE sshcommand acl-add git git-user\""
+        echo "su - git -c \"cat $APP_ROOT/.ssh/id_rsa.pub | ssh root@$VALUE sshcommand acl-add git git-user\""
       fi
     done
 
@@ -146,7 +148,7 @@ case "$1" in
       exit 1
     fi
 
-    APP="$2"; APP_DIR="/home/git/$APP"
+    APP="$2"; APP_DIR="$APP_ROOT/$APP"
     ENV_TEMP=`cat "${ENV_FILE}"`
     ID=$(< "$APP_DIR/CONTAINER")
     VARS="${*:3}"
@@ -159,8 +161,10 @@ case "$1" in
       nodes_restart_app $APP
     done
   ;;
+
   nodes:internal:deploy)
-    APP="$2"; PORT="$3"; PROC_TYPE=${4-web}; APP_DIR="/home/git/$APP";
+    APP="$2"; PORT="$3"; PROC_TYPE=${4-web}; APP_DIR="$APP_ROOT/$APP";
+
     IMAGE="app/$APP"
     if [[ ! -d "$APP_DIR" ]]; then
       mkdir $APP_DIR
@@ -170,13 +174,11 @@ case "$1" in
     docker pull localhost:5000/appl/$APP
     docker tag localhost:5000/appl/$APP $IMAGE
     echo $HOME
-    if [[ -f "/home/git/$APP/CONTAINER" ]]; then 
-      oldid=$(< "/home/git/$APP/CONTAINER")
-      
+    if [[ -f "$APP_DIR/CONTAINER" ]]; then
+      oldid=$(< "$APP_DIR/CONTAINER")
     fi
     id=$(docker run -d -p "$PORT"  $IMAGE /bin/bash -c "/start $PROC_TYPE")
-    echo $id > "/home/git/$APP/CONTAINER"
-
+    echo $id > "$APP_DIR/CONTAINER"
 
     pluginhook post-deploy $APP $PORT
 
@@ -186,6 +188,7 @@ case "$1" in
       docker kill $oldid > /dev/null
     fi
     ;;
+
   help)
     cat && cat<<EOF
     nodes <app>                                    display the nodes vars for an app
