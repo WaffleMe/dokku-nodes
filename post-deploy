@@ -15,7 +15,7 @@ update_nodes () {
   done
 }
 
-if [[ -d "/home/git/$APP/.git" ]]; then 
+if [[ -f "/home/git/$APP/config" ]]; then 
   REMOTE_APP="localhost:5000/appl/$APP"
   echo "$REMOTE_APP $APP"
   docker tag app/$APP $REMOTE_APP
