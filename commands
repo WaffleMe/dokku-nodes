@@ -164,6 +164,11 @@ case "$1" in
 
   nodes:internal:deploy)
     APP="$2"; PORT="$3"; PROC_TYPE=${4-web}; APP_DIR="$APP_ROOT/$APP";
+    echo "nodes:internal:deploy"
+    echo "\$APP: $APP"
+    echo "\$PORT: $PORT"
+    echo "\$PROC_TYPE: $PROC_TYPE"
+    echo "\$APP_DIR: $APP_DIR"
 
     IMAGE="app/$APP"
     if [[ ! -d "$APP_DIR" ]]; then
@@ -183,9 +188,8 @@ case "$1" in
     pluginhook post-deploy $APP $PORT
 
     if [[ -n "$oldid" ]]; then
-      echo "waiting for instance to start up"
-      sleep 20
-      docker kill $oldid > /dev/null
+      echo "removing old instance"
+      docker stop -t 20 $oldid > /dev/null
     fi
     ;;
 

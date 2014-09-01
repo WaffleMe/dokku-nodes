@@ -14,15 +14,20 @@ update_nodes() {
     domains=`echo $VALUE | tr ',' '\n'`
     for domain in $domains; do
       echo $KEY=$domain
+      echo "ssh git@$domain dokku nodes:internal:deploy $APP $PORT $KEY"
       echo -e `ssh git@$domain dokku nodes:internal:deploy $APP $PORT $KEY`
     done
   done
 }
 
-if [[ -f "$APP_ROOT/$APP/config" ]]; then
+if [[ -f "$APP_ROOT/$APP/NODES" ]]; then
+  echo "Running NODES post-deploy..."
   REMOTE_APP="localhost:5000/appl/$APP"
   echo "$REMOTE_APP $APP"
   docker tag app/$APP $REMOTE_APP
   docker push $REMOTE_APP
   update_nodes `cat $APP_ROOT/$APP/NODES`
+  echo "Finished running NODES post-deploy."
+else
+  echo "Skipping NODES post-deploy."
 fi
