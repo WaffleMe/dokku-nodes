@@ -190,7 +190,7 @@ case "$1" in
       if docker inspect $running_container | grep -q "NODES_IMAGE="; then
         # filter out any nodes that we created with the current app image
         if ! docker inspect $running_container | grep -q "NODES_IMAGE=$image_id"; then
-          echo "Stopping existing nodes container: $running_container"
+          echo "Stopping existing nodes container... $running_container"
           docker stop -t 10 $running_container > /dev/null
         fi
       fi

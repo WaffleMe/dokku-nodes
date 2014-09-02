@@ -15,8 +15,10 @@ update_nodes() {
     for domain in $domains; do
       echo $KEY=$domain
       # will run as dokku command due to /home/git/.sshcommand
-      echo "ssh -t git@$domain nodes:internal:deploy $APP $PORT $KEY 3"
-      echo -e `ssh -t git@$domain nodes:internal:deploy $APP $PORT $KEY 3`
+      # hardcoded to 6 processes for now; could put this in configuration or read from file
+      PROCESSES=6
+      echo "ssh git@$domain nodes:internal:deploy $APP $PORT $KEY $PROCESSES"
+      echo -e `ssh git@$domain nodes:internal:deploy $APP $PORT $KEY $PROCESSES`
     done
   done
 }
