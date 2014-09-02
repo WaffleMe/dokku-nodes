@@ -161,34 +161,35 @@ case "$1" in
   ;;
 
   nodes:internal:deploy)
-    APP="$2"; PORT="$3"; PROC_TYPE=${4-web}; APP_DIR="$APP_ROOT/$APP";
     echo "nodes:internal:deploy"
-    echo "\$APP: $APP"
-    echo "\$PORT: $PORT"
-    echo "\$PROC_TYPE: $PROC_TYPE"
-    echo "\$APP_DIR: $APP_DIR"
+    APP="$2"; PORT="$3"; PROC_TYPE=${4-web}; APP_DIR="$APP_ROOT/$APP";
 
-    IMAGE="app/$APP"
     if [[ ! -d "$APP_DIR" ]]; then
       mkdir $APP_DIR
       echo $PORT > $APP_DIR/PORT
       echo $PROC_TYPE > $APP_DIR/PROCTYPE
     fi
+
     docker pull localhost:5000/appl/$APP
+    IMAGE="app/$APP"
     docker tag localhost:5000/appl/$APP $IMAGE
-    echo $HOME
-    if [[ -f "$APP_DIR/CONTAINER" ]]; then
-      oldid=$(< "$APP_DIR/CONTAINER")
-    fi
-    id=$(docker run -d -p "$PORT"  $IMAGE /bin/bash -c "/start $PROC_TYPE")
-    echo $id > "$APP_DIR/CONTAINER"
 
-    pluginhook post-deploy $APP $PORT
+    image_id=$(docker images -q $IMAGE)
+    id=$(docker run -d -e "NODES_IMAGE=$image_id" -p "$PORT"  $IMAGE /bin/bash -c "/start $PROC_TYPE")
 
-    if [[ -n "$oldid" ]]; then
-      echo "removing old instance"
-      docker stop -t 20 $oldid > /dev/null
-    fi
+    # don't see a reason for this at this time
+    #pluginhook post-deploy $APP $PORT
+
+    # stop any nodes started containers from previous deployments
+    running_containers=$(docker ps -q)
+    for running_container in $running_containers; do
+      if docker inspect $running_container | grep -q "NODES_IMAGE="; then
+        if ! docker inspect $running_container | grep -q "NODES_IMAGE=$image_id"; then
+          echo 'stopping existing nodes container'
+          docker stop -t 10 $running_container > /dev/null
+        fi
+      fi
+    done
   ;;
 
   help)
