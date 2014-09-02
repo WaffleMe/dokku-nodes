@@ -14,8 +14,8 @@ update_nodes() {
     domains=`echo $VALUE | tr ',' '\n'`
     for domain in $domains; do
       echo $KEY=$domain
-      echo "ssh -f git@$domain dokku nodes:internal:deploy $APP $PORT $KEY"
-      echo -e `ssh -f git@$domain dokku nodes:internal:deploy $APP $PORT $KEY`
+      echo "ssh -t git@$domain dokku nodes:internal:deploy $APP $PORT $KEY"
+      echo -e `ssh -t git@$domain dokku nodes:internal:deploy $APP $PORT $KEY`
     done
   done
 }
@@ -29,5 +29,5 @@ if [[ -f "$APP_ROOT/$APP/NODES" ]]; then
   update_nodes `cat $APP_ROOT/$APP/NODES`
   echo "Finished running NODES post-deploy."
 else
-  echo "Skipping NODES post-deploy."
+  echo "Skipping NODES post-deploy, no nodes present."
 fi
