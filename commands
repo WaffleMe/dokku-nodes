@@ -162,7 +162,7 @@ case "$1" in
 
   nodes:internal:deploy)
     echo "nodes:internal:deploy"
-    APP="$2"; PORT="$3"; PROC_TYPE=${4-web}; APP_DIR="$APP_ROOT/$APP";
+    APP="$2"; PORT="$3"; PROC_TYPE=${4-web}; PROCESSES=${5-1}; APP_DIR="$APP_ROOT/$APP";
 
     if [[ ! -d "$APP_DIR" ]]; then
       mkdir $APP_DIR
@@ -175,7 +175,10 @@ case "$1" in
     docker tag localhost:5000/appl/$APP $IMAGE
 
     image_id=$(docker images -q $IMAGE)
-    id=$(docker run -d -e "NODES_IMAGE=$image_id" -p "$PORT"  $IMAGE /bin/bash -c "/start $PROC_TYPE")
+    echo "Starting $PROCESSES '$PROC_TYPE' process container(s)."
+    for i in `seq 1 $PROCESSES`; do
+      docker run -d -e "NODES_IMAGE=$image_id" -p "$PORT" $IMAGE /bin/bash -c "/start $PROC_TYPE" > /dev/null
+    done
 
     # don't see a reason for this at this time
     #pluginhook post-deploy $APP $PORT
@@ -183,9 +186,11 @@ case "$1" in
     # stop any nodes started containers from previous deployments
     running_containers=$(docker ps -q)
     for running_container in $running_containers; do
+      # find nodes-generated containers
       if docker inspect $running_container | grep -q "NODES_IMAGE="; then
+        # filter out any nodes that we created with the current app image
         if ! docker inspect $running_container | grep -q "NODES_IMAGE=$image_id"; then
-          echo 'stopping existing nodes container'
+          echo "Stopping existing nodes container: $running_container"
           docker stop -t 10 $running_container > /dev/null
         fi
       fi
